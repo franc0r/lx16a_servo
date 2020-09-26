@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace francor{
+namespace francor::servo{
 
 constexpr uint8_t                     LOBOT_SERVO_FRAME_HEADER         = 0x55;
 constexpr std::pair<uint8_t, uint8_t> LOBOT_SERVO_MOVE_TIME_WRITE      = std::make_pair(1,  7);
@@ -100,7 +100,33 @@ public:
     return data;
   }
 
-  inline static std::vector<uint8_t> create_set_limit_cmd(const uint8_t id, const uint16_t min_angle, const uint16_t max_angle)
+  inline static std::vector<uint8_t> create_set_angle_offset_cmd(const uint8_t id, const int8_t offset)
+  {
+    auto tmp_offset = constrain<uint8_t>(offset, -125, 125);
+
+    auto data = init_cmd(LOBOT_SERVO_ANGLE_OFFSET_ADJUST, id);
+    data[5] = tmp_offset;
+    data[6] = compute_checksum(data);
+    
+    return data;
+  } 
+
+  inline static std::vector<uint8_t> create_set_flash_angle_offset_cmd(const uint8_t id)
+  {
+    auto data = init_cmd(LOBOT_SERVO_ANGLE_OFFSET_WRITE, id);
+    data[5] = compute_checksum(data);
+    return data;
+  }
+
+  inline static std::vector<uint8_t> create_get_angle_offset_cmd(const uint8_t id)
+  {
+    auto data = init_cmd(LOBOT_SERVO_ANGLE_OFFSET_READ, id);
+    data[5] = compute_checksum(data);
+    return data;
+  }
+
+
+  inline static std::vector<uint8_t> create_set_angle_limit_cmd(const uint8_t id, const uint16_t min_angle, const uint16_t max_angle)
   {
     auto tmp_min = constrain<uint16_t>(min_angle, 0, 1000);
     auto tmp_max = constrain<uint16_t>(max_angle, 0, 1000);
@@ -124,7 +150,7 @@ public:
     return data;
   }
 
-  inline static std::vector<uint8_t> create_get_limit_cmd(const uint8_t id)
+  inline static std::vector<uint8_t> create_get_angle_limit_cmd(const uint8_t id)
   {
     auto data = init_cmd(LOBOT_SERVO_ANGLE_LIMIT_READ, id);
     data[5] = compute_checksum(data);
@@ -134,7 +160,7 @@ public:
   inline static std::vector<uint8_t> create_set_v_limit_cmd(const uint8_t id, const uint16_t min_v, const uint16_t max_v)
   {
     auto tmp_min = constrain<uint16_t>(min_v, 4500, 12000);
-    auto tmp_max = constrain<uint16_t>(max_v, 4600, 12000);
+    auto tmp_max = constrain<uint16_t>(max_v, 4500, 12000);
 
     //switch min max if needed
     if(tmp_min > tmp_max) 

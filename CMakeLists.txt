@@ -2,7 +2,10 @@ set(project_name lx16a_servo)
 
 project(${project_name})
 
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.10)
+
+enable_testing()
+
 
 #set compiler flags
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O2 -Wall -std=c++17")
@@ -22,6 +25,7 @@ link_directories(${Boost_LIBRARY_DIR} )
 
 #grab files
 file(GLOB src_lx16a_servo_lib "src/*.cpp"
+                              "src/francor/*.cpp"
              )
 
 
@@ -30,12 +34,13 @@ file(GLOB src_lx16a_servo_lib "src/*.cpp"
 add_library(lx16a_servo ${src_lx16a_servo_lib})
 
 #add executable
-add_executable(test_servo src/Serial.cpp
+add_executable(test_servo src/francor/Serial.cpp
                           src/test/test.cpp )
 
 #link executable
 target_link_libraries(test_servo ${Boost_LIBRARIES}
                                  pthread
+                                 tinyxml2
                                )
 
 
@@ -45,3 +50,5 @@ target_link_libraries(test_servo ${Boost_LIBRARIES}
 #        )
 
 #install(FILES config/template.xml DESTINATION /etc/template/)
+
+add_subdirectory(src/test)

@@ -1,12 +1,16 @@
 #include "../SerialCommand_Lx16a.h"
 
-#include "../Serial.h"
+#include "../francor/Serial.h"
+
+#include "../Servo_Lx16a.h"
+
+#include "../ConfigParser_Lx16a.h"
 
 #include <thread>
 
 francor::SerialCom com("/dev/ttyUSB0", francor::B_115200);
 
-francor::SerialParser_lx16a parser;
+francor::servo::SerialParser_lx16a parser;
 
 void read_thrd()
 {
@@ -40,13 +44,21 @@ void read_thrd()
 
 int main(int argc, char const *argv[])
 {
+  //test xml
+  // francor::XMLParser parser;
+  // parser.load("hans");
 
-  // if(argc != 2)
-  // {
-  //   std::cout << "Error at usage... use: " << argv[0] << "<device>" << std::endl;
-  //   ::exit(EXIT_FAILURE);
-  // }
+  if(argc != 2)
+  {
+    std::cout << "Error at usage... use: " << argv[0] << "<config>" << std::endl;
+    ::exit(EXIT_FAILURE);
+  }
 
+  auto params = francor::servo::parseXML(argv[1]);
+  for(auto& e : params)
+  {
+    std::cout << e << std::endl;
+  }
 
   if(com.connect() != francor::DeviceSucces)
   {
@@ -61,7 +73,7 @@ int main(int argc, char const *argv[])
   // int pos = 0;
   while(1)
   {
-    auto data = francor::SerialCommand_Lx16a::create_set_pos_cmd(2, 200, 1);
+    auto data = francor::servo::SerialCommand_Lx16a::create_set_pos_cmd(2, 200, 1);
     std::cout << "size: " << data.size() << std::endl;
     // for(auto& e : data)
     // {
@@ -69,12 +81,12 @@ int main(int argc, char const *argv[])
     // }
     // std::cout << "" << std::endl;
     com.transmit(data);
-    com.transmit(francor::SerialCommand_Lx16a::create_get_limit_cmd(2));
-    // com.transmit(francor::SerialCommand_Lx16a::create_get_pos_cmd(2));
+    com.transmit(francor::servo::SerialCommand_Lx16a::create_get_angle_limit_cmd(2));
+    // com.transmit(francor::servo::SerialCommand_Lx16a::create_get_pos_cmd(2));
     std::cout << "press enter" << std::endl;
     getchar();
-    com.transmit(francor::SerialCommand_Lx16a::create_set_pos_cmd(2, 800));
-    com.transmit(francor::SerialCommand_Lx16a::create_get_pos_cmd(2));
+    com.transmit(francor::servo::SerialCommand_Lx16a::create_set_pos_cmd(2, 800, 5000));
+    com.transmit(francor::servo::SerialCommand_Lx16a::create_get_pos_cmd(2));
     std::cout << "press enter" << std::endl;
     getchar();
     // std::cout << "press enter" << std::endl;
@@ -90,6 +102,7 @@ int main(int argc, char const *argv[])
     // else if(pos <= 0)
     //   dings = 2;
   }
+
 
   return 0;
 }
