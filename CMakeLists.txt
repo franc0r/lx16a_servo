@@ -24,18 +24,23 @@ include_directories(${Boost_INCLUDE_DIR}
 link_directories(${Boost_LIBRARY_DIR} )
 
 #grab files
-file(GLOB src_lx16a_servo_lib "src/*.cpp"
-                              "src/francor/*.cpp"
-             )
+# file(GLOB src_lx16a_servo_lib "src/*.cpp"
+#                               # "src/francor/*.cpp"
+#              )
 
 
 
 #add lib
-add_library(lx16a_servo ${src_lx16a_servo_lib})
+# add_library(lx16a_servo ${src_lx16a_servo_lib})
 
 #add executable
-add_executable(test_servo src/francor/Serial.cpp
-                          src/test/test.cpp )
+add_executable(test_servo   src/test/test.cpp )
+
+add_executable(test_handler src/test/test_handler.cpp)
+
+#tools
+add_executable(find_servos src/tools/find_servos.cpp)
+add_executable(servo_set_id src/tools/servo_set_id.cpp)
 
 #link executable
 target_link_libraries(test_servo ${Boost_LIBRARIES}
@@ -43,7 +48,20 @@ target_link_libraries(test_servo ${Boost_LIBRARIES}
                                  tinyxml2
                                )
 
+target_link_libraries(test_handler ${Boost_LIBRARIES}
+                                 pthread
+                                 tinyxml2
+                               )
 
+target_link_libraries(find_servos ${Boost_LIBRARIES}
+                               pthread
+                               tinyxml2
+                             )
+
+target_link_libraries(servo_set_id ${Boost_LIBRARIES}
+                             pthread
+                             tinyxml2
+                           )
 #install
 #install(TARGETS template
 #        RUNTIME DESTINATION bin
@@ -51,4 +69,4 @@ target_link_libraries(test_servo ${Boost_LIBRARIES}
 
 #install(FILES config/template.xml DESTINATION /etc/template/)
 
-add_subdirectory(src/test)
+# add_subdirectory(src/test)

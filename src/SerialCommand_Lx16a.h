@@ -38,6 +38,15 @@ constexpr std::pair<uint8_t, uint8_t> LOBOT_SERVO_LED_CTRL_READ        = std::ma
 constexpr std::pair<uint8_t, uint8_t> LOBOT_SERVO_LED_ERROR_WRITE      = std::make_pair(35, 4);
 constexpr std::pair<uint8_t, uint8_t> LOBOT_SERVO_LED_ERROR_READ       = std::make_pair(36, 3);
 
+constexpr uint8_t LOBOT_ERROR_NO_ALARM               = 0;
+constexpr uint8_t LOBOT_ERROR_OVER_TEMP              = 1;
+constexpr uint8_t LOBOT_ERROR_OVER_VOLT              = 2;
+constexpr uint8_t LOBOT_ERROR_OVER_TEMP_OR_VOLT      = 3;
+constexpr uint8_t LOBOT_ERROR_LOCKED_ROTOR           = 4;
+constexpr uint8_t LOBOT_ERROR_OVER_TEMP_STALLED      = 5;
+constexpr uint8_t LOBOT_ERROR_OVER_VOLT_STALLED      = 6;
+constexpr uint8_t LOBOT_ERROR_OVER_TEMP_VOLT_STALLED = 7;
+
 class SerialCommand_Lx16a{
 public:
   
@@ -82,11 +91,6 @@ public:
 
   inline static std::vector<uint8_t> create_set_id_cmd(const uint8_t id_old, const uint8_t id_new)
   {
-    //for now not use (untested)
-    std::vector<uint8_t> ret;
-    return ret;
-
-
     auto data = init_cmd(LOBOT_SERVO_ID_WRITE, id_old);
     data[5] = id_new;
     data[6] = compute_checksum(data);
@@ -247,7 +251,7 @@ public:
     return data;
   }
 
-  inline static std::vector<uint8_t> create_get_mode_cmd(const uint8_t id)
+  inline static std::vector<uint8_t> create_get_mode_speed_cmd(const uint8_t id)
   {
     auto data = init_cmd(LOBOT_SERVO_OR_MOTOR_MODE_READ, id);
     data[5] = compute_checksum(data);

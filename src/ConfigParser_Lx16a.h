@@ -35,32 +35,54 @@ inline std::vector<Params_Lx16a> parseXML(const std::string& path)
     {
       parser.setFixChild("servo_config", "servo");
       Params_Lx16a p(
-        /*p.id         =*/ std::stoi(parser.getChildText("id")),
-        /*p.name       =*/ parser.getChildText("name"),
-        /*p.max_v_in   =*/ std::stod(parser.getChildText("max_v_in")),
-        /*p.min_v_in   =*/ std::stod(parser.getChildText("min_v_in")),
-        /*p.max_temp   =*/ std::stoi(parser.getChildText("max_temp")),
-        /*p.angle_max  =*/ std::stod(parser.getChildText("angle_max")),
-        /*p.angle_min  =*/ std::stod(parser.getChildText("angle_min")),
-        /*p.mode_servo =*/ (std::stoi(parser.getChildText("mode")) ? true : false)
+        /*p.id         :*/ std::stoi(parser.getChildText("id")),
+        /*p.name       :*/ parser.getChildText("name"),
+        /*p.base_frame :*/ parser.getChildText("base_frame"),
+        /*p.max_v_in   :*/ std::stod(parser.getChildText("max_v_in")),
+        /*p.min_v_in   :*/ std::stod(parser.getChildText("min_v_in")),
+        /*p.max_temp   :*/ std::stoi(parser.getChildText("max_temp")),
+        /*p.angle_max  :*/ std::stod(parser.getChildText("angle_max")),
+        /*p.angle_min  :*/ std::stod(parser.getChildText("angle_min")),
+        /*p.mode_servo :*/ (std::stoi(parser.getChildText("mode")) ? true : false)
       );
-      params.push_back(p);
+
+      //prove if id and name is unique
+      bool id_name_unique = true;
+      for(auto& e : params)
+      {
+        if(p.id == e.id || p.name == e.name)
+        {
+          id_name_unique = false;
+          std::cout << "Warning given ID or Name not unique... ignore this servo" << std::endl;
+          break;
+        }
+      }
+      
+
+      if(id_name_unique)
+      {
+        params.push_back(p);
+      }
 
       parser.setFixChild("servo_config");
       parser.deleteChild("servo"); //get next servo
     }
-    catch(const std::invalid_argument& e)
-    {
-      std::cerr << "Error at converting xml_file" <<e.what() << '\n';
-      ::exit(EXIT_FAILURE);
-    }
+    // catch(const std::invalid_argument& e)
+    // {
+    //   std::cerr << "Error at converting xml_file" <<e.what() << '\n';
+    //   ::exit(EXIT_FAILURE);
+    // }
     catch(const std::out_of_range& e)
     {
       break;
     }
   }
 
-  std::cout << "Read config for " << params.size() << " servo(s)..." << std::endl;
+  std::cout << "Read config for " << params.size() << " servo(s) :" << std::endl;
+  for(auto& e : params)
+  {
+    std::cout << e << std::endl;
+  }
 
   return params;
 }

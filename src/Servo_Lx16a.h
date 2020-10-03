@@ -28,12 +28,13 @@ const double SERVO_RAD_MAX_EXTENDED = 2.61799;
 const uint16_t SERVO_POS_MIN = 0;
 const uint16_t SERVO_POS_MAX = 1000;
 
-const uint16_t SERVO_MAX_TIME = 10000; //for speed calc (lowest speed)
+const uint16_t SERVO_MAX_SPEED = 75; //for speed calc (lowest speed)
 
 
 struct Params_Lx16a{
   const uint8_t     id;     //servo id
   const std::string name;   //name of servo (only for this lib)
+  const std::string base_frame; //for tf(ros) only frmae of parent frame
   const double  max_v_in;   //max input voltage
   const double  min_v_in;   //min input voltage
   const int16_t max_temp;   //max possible temperature
@@ -43,7 +44,8 @@ struct Params_Lx16a{
 
   // Params_Lx16a() = delete;
   Params_Lx16a(const uint8_t      id_, 
-               const std::string& name_, 
+               const std::string& name_,
+               const std::string& base_frame_, 
                const double       max_v_in_,
                const double       min_v_in_,
                const int16_t      max_temp_,
@@ -53,6 +55,7 @@ struct Params_Lx16a{
                ) :
     id(id_),
     name(name_),
+    base_frame(base_frame_),
     max_v_in(max_v_in_),
     min_v_in(min_v_in_),
     max_temp(max_temp_),
@@ -69,13 +72,13 @@ struct Params_Lx16a{
  * 
  */
 struct Status_Lx16a{
-  francor::base::NormalizedAngle pos;
+  francor::base::NormalizedAngleExtended pos;
   double  speed = 0;
   uint8_t  temp = 0;
   double v_in = 0;
   uint8_t  error_state = 0;
   Status_Lx16a() = default;
-  Status_Lx16a(const francor::base::NormalizedAngle& pos_,
+  Status_Lx16a(const francor::base::NormalizedAngleExtended& pos_,
                const double  speed_,
                const uint8_t  temp_,
                const double v_in_,
@@ -111,10 +114,13 @@ public:
     this->set_min_max_angle(_param.min_angle_rad, _param.max_angle_rad);
   }
 
-  void set_pos(const francor::base::NormalizedAngle& angle)
+  void set_pos(const francor::base::NormalizedAngleExtended& angle)
   {
+    std::cout << "ID: " << (int)_param.id << "got angle: " << angle.radian() << std::endl;
     auto pos = this->rad_to_servoangle(angle.radian());
-    auto data = SerialCommand_Lx16a::create_set_pos_cmd(_param.id, pos);
+    _set_pos_active = 20;
+    _desired_pos = angle.radian();
+    _send_serial_cb(SerialCommand_Lx16a::create_set_pos_cmd(_param.id, pos));
   }
 
   /**
@@ -129,29 +135,51 @@ public:
    */
   void set_speed(const double speed)
   {
+    if(_set_pos_active > 0)
+    {
+      if(isEqual(_desired_pos, _status.pos.radian(), 0.05))
+      {
+        _set_pos_active--;
+      }
+      _curr_speed_pos = this->rad_to_servoangle(_status.pos);
+      return;
+    }
+
     auto tmp_speed = constrain(speed, -1.0, 1.0);
+    // std::cout << "tmp_speed: " << tmp_speed << std::endl;
     //stop if speed near 0
     if(std::abs(tmp_speed) < 0.00001)
     {
       //stop
       _send_serial_cb(SerialCommand_Lx16a::create_stop_cmd(_param.id));
+      _curr_speed_pos = this->rad_to_servoangle(_status.pos);
     }
 
-    //set min/max angle with given speed (converted to write time)
-    //only for testing ... not wroking for end approach  todo compare with current angle
-    uint16_t time = (1.0 - (1+std::abs(tmp_speed)) * 0.5) * SERVO_MAX_TIME;
+    _curr_speed_pos += std::round(static_cast<double>(SERVO_MAX_SPEED) * tmp_speed) ;
+
+    _curr_speed_pos = constrain(_curr_speed_pos, 0, 1000);
+    // std::cout << "_curr_speed_pos: " << _curr_speed_pos << std::endl;
+    _send_serial_cb(SerialCommand_Lx16a::create_set_pos_cmd(_param.id, _curr_speed_pos));
+    // //set min/max angle with given speed (converted to write time)
+    // //only for testing ... not wroking for end approach  todo compare with current angle
+    // uint16_t time = (1.0 - (1+std::abs(tmp_speed)) * 0.5) * SERVO_MAX_TIME;
     
-    _send_serial_cb(SerialCommand_Lx16a::create_set_pos_cmd(_param.id, (speed > 0 ? SERVO_POS_MAX : SERVO_POS_MIN), time));
+    // _send_serial_cb(SerialCommand_Lx16a::create_set_pos_cmd(_param.id, (speed > 0 ? SERVO_POS_MAX : SERVO_POS_MIN), time));
   } 
 
-  Status_Lx16a get_status() const
+  const Status_Lx16a& get_status() const
   {
     return _status;
   }
 
+  const Params_Lx16a& get_param() const
+  {
+    return _param;
+  }
+
 
   //notify cb
-  void attach_status_chagned_callback(const std::function<void(const Status_Lx16a&)>& f)
+  void attach_status_chagned_callback(const std::function<void(const uint8_t, const Status_Lx16a&)>& f)
   {
     _status_cb = f;
   }
@@ -161,21 +189,67 @@ public:
     _send_serial_cb = f;
   }
 
+  void request_pos() const
+  {
+    _send_serial_cb(SerialCommand_Lx16a::create_get_pos_cmd(_param.id));
+  }
+
+  void request_speed() const
+  {
+    _send_serial_cb(SerialCommand_Lx16a::create_get_mode_speed_cmd(_param.id));
+  }
+
+  void request_error() const 
+  {
+    _send_serial_cb(SerialCommand_Lx16a::create_get_error_cmd(_param.id));
+  }
+
+  void request_temp() const
+  {
+    _send_serial_cb(SerialCommand_Lx16a::create_get_temp_cmd(_param.id));
+  }
+
+  void request_vin() const
+  {
+    _send_serial_cb(SerialCommand_Lx16a::create_get_v_cmd(_param.id));
+  }
+
 //update call
 
   /**
    * @brief 
    * 
-   * @todo may do this fnc friend or somthing (not callable from user)
-   * 
-   * @param status 
    */
-  void update_status(const Status_Lx16a& status)
+  void update_status(const SerialReturn_Lx16a& serial_ret)
   {
-    _status = status;
+    //convert serial return to status
+    switch (serial_ret.cmd_id)
+    {
+    case LOBOT_SERVO_TEMP_READ.first:
+      _status.temp = serial_ret.param_1;
+      break;
+    case LOBOT_SERVO_VIN_READ.first:
+      _status.v_in = static_cast<double>(serial_ret.param_1) / 1000.0;
+      break;
+    case LOBOT_SERVO_POS_READ.first:
+      _status.pos = this->servoangle_to_rad(serial_ret.param_1);
+      // std::cout << "serial_ret.param_1: " << serial_ret.param_1 << std::endl;
+      break;
+    case LOBOT_SERVO_OR_MOTOR_MODE_READ.first: //for speed
+      _status.speed = static_cast<double>(serial_ret.param_2) / 1000.0;
+      break;
+    case LOBOT_SERVO_LED_ERROR_READ.first:
+      _status.error_state = serial_ret.param_1;
+      break;
+    default:
+      std::cout << "Error while updateing Status... wrong cmd id... do nothing" << std::endl;
+      return;
+    }
+
     if(_status_cb)
     {
-      _status_cb(_status);
+    // std::cout << "update..." << std::endl;
+      _status_cb(_param.id, _status);
     }
   }
 
@@ -193,10 +267,12 @@ private:
     
   }
 
-  void set_min_max_angle(const francor::base::NormalizedAngle& min_angle, const francor::base::NormalizedAngle& max_angle)
+  void set_min_max_angle(const francor::base::NormalizedAngleExtended& min_angle, const francor::base::NormalizedAngleExtended& max_angle)
   {
     const uint16_t min_ang = this->rad_to_servoangle(min_angle.radian());
+    // std::cout << "min_ang: " << min_ang << std::endl;
     const uint16_t max_ang = this->rad_to_servoangle(max_angle.radian());
+    // std::cout << "max_ang: " << max_ang << std::endl;
 
     auto data = SerialCommand_Lx16a::create_set_angle_limit_cmd(_param.id, min_ang, max_ang);
 
@@ -211,16 +287,18 @@ private:
    * @param rad 
    * @return int16_t 
    */
-  uint16_t rad_to_servoangle(const francor::base::NormalizedAngle& angle)
+  uint16_t rad_to_servoangle(const francor::base::NormalizedAngleExtended& angle)
   {
     double rad = constrain(angle.radian(), SERVO_RAD_MIN, SERVO_RAD_MAX);
-    
-    return rescale(rad, SERVO_RAD_MIN, SERVO_RAD_MAX, SERVO_POS_MIN, SERVO_POS_MAX);
+    // std::cout << "rad: " << rad << std::endl;
+    uint16_t tmp = rescale(rad, SERVO_RAD_MIN, SERVO_RAD_MAX, SERVO_POS_MIN, SERVO_POS_MAX);
+    // std::cout << "tmp: " << tmp << std::endl;
+    return tmp;
   }
 
-  francor::base::NormalizedAngle servoangle_to_rad(const uint16_t servoangle)
+  francor::base::NormalizedAngleExtended servoangle_to_rad(const int16_t servoangle)
   {
-    uint16_t pos = constrain(servoangle, SERVO_POS_MIN, SERVO_POS_MAX);
+    int16_t pos = constrain(servoangle, SERVO_POS_MIN, SERVO_POS_MAX);
 
     double rad = rescale(pos, SERVO_POS_MIN, SERVO_POS_MAX, SERVO_RAD_MIN, SERVO_RAD_MAX);
     return rad;
@@ -237,20 +315,28 @@ private:
     return vel < low ? low : (vel > high ? high : vel);
   } 
 
+  static inline bool isEqual(const double a, const double b, const double elipson = 0.001)
+  {
+      return std::abs(a - b) < elipson;
+  }
 
 
 private: //data
-  std::function<void(const Status_Lx16a&)> _status_cb;
+  std::function<void(const uint8_t, const Status_Lx16a&)> _status_cb;
   std::function<void(const std::vector<uint8_t>&)> _send_serial_cb;
 
   Params_Lx16a _param;
 
   Status_Lx16a _status;
 
+  int16_t _curr_speed_pos;
+
+  int _set_pos_active = 0;
+
   //is used for extended mode
   int8_t  _offset;
   //desired value
-  uint16_t _desired_pos;
+  double _desired_pos;
   int16_t  _desired_speed;
 };
 
@@ -275,9 +361,9 @@ inline std::ostream& operator<<(std::ostream& os, const francor::servo::Status_L
   os << "lxy-16 Servo status:" << std::endl;
   os << "  pos: " << s.pos.radian() << std::endl;
   os << "  speed: " << s.speed << std::endl;
-  os << "  temp: " << s.temp << std::endl;
+  os << "  temp: " << (int)s.temp << std::endl;
   os << "  v_in: " << s.v_in << std::endl;
-  os << "  error_state: " << s.error_state << std::endl;
+  os << "  error_state: " << (int)s.error_state << std::endl;
 
   return os;
 }
