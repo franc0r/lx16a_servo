@@ -376,9 +376,9 @@ private:
     while(_run.load())
     {
       _mtx_serial_out.lock();
-      if(_serial_out.size() > 10)
+      if(_serial_out.size() > 20)
       {
-        std::cout << "warning... serial out buffer >10 .... size: " << _serial_out.size() << std::endl;
+        std::cout << "warning... serial out buffer >20 .... size: " << _serial_out.size() << std::endl;
       }
       if(_serial_out.size())
       {

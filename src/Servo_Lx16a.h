@@ -28,7 +28,7 @@ const double SERVO_RAD_MAX_EXTENDED = 2.61799;
 const uint16_t SERVO_POS_MIN = 0;
 const uint16_t SERVO_POS_MAX = 1000;
 
-const uint16_t SERVO_MAX_SPEED = 75; //for speed calc (lowest speed)
+const uint16_t SERVO_MAX_SPEED = 65; //for speed calc (lowest speed)
 
 
 struct Params_Lx16a{
@@ -116,7 +116,7 @@ public:
 
   void set_pos(const francor::base::NormalizedAngleExtended& angle)
   {
-    std::cout << "ID: " << (int)_param.id << "got angle: " << angle.radian() << std::endl;
+    // std::cout << "ID: " << (int)_param.id << "got angle: " << angle.radian() << std::endl;
     auto pos = this->rad_to_servoangle(angle.radian());
     _set_pos_active = 20;
     _desired_pos = angle.radian();
