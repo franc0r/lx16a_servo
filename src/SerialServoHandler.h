@@ -359,11 +359,11 @@ private:
         continue;
       }
       auto msg = _parser.push_msg_byte(data);
-      if(msg)
+      if(msg.first)
       {
         //got valid msg and push in queue
         const std::lock_guard<std::mutex> lock(_mtx_serial_in);
-        _serial_in.push(msg.value());
+        _serial_in.push(msg.second);
       }
     }
     std::cout << "Exit serial read thread..." << std::endl;

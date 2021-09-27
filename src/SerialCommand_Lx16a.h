@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <cstdint>
-#include <optional>
+// #include <optional>
 
 namespace francor::servo{
 
@@ -387,9 +387,11 @@ public:
    * @param byte byte got by Serial
    * @return std::optional<SerialCommand_Lx16a> empty if msg not rdy or Serial Return
    */
-  std::optional<SerialReturn_Lx16a> push_msg_byte(const uint8_t byte)
+  std::pair<bool, SerialReturn_Lx16a> push_msg_byte(const uint8_t byte)
   { 
-    std::optional<SerialReturn_Lx16a> ret;
+    SerialReturn_Lx16a ret_empty(0, 0, 0, 0);
+    std::pair<bool, SerialReturn_Lx16a> ret = std::make_pair(false, ret_empty);
+    
 
     if(msg.size() <= 1)     //read header
     {
@@ -451,7 +453,7 @@ public:
 
         SerialReturn_Lx16a serial_ret(msg[2], msg[4], param_1, param_2);
         this->reset(); //make clear for new msg
-        ret = serial_ret;
+        ret = std::make_pair(true, serial_ret);
       }
     }
     return ret;

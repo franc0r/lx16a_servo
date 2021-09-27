@@ -18,6 +18,7 @@
   "peacock.color": "#09110b",
   "files.associations": {
     "cstddef": "cpp",
-    "ostream": "cpp"
+    "ostream": "cpp",
+    "optional": "cpp"
   }
 }

@@ -29,13 +29,13 @@ void read_thrd()
     }
     std::cout << "got byte" << std::endl;
     auto msg = parser.push_msg_byte(data);
-    if(msg)
+    if(msg.first)
     {
       std::cout << "----> got msg" << std::endl;
-      std::cout << "msg.value().id: " << (int)msg.value().id << std::endl;
-      std::cout << "msg.value().cmd_id: " << (int)msg.value().cmd_id << std::endl;
-      std::cout << "msg.value().param_1: " << (int)msg.value().param_1 << std::endl;
-      std::cout << " msg.value().param_2: " <<  (int)msg.value().param_2 << std::endl;
+      std::cout << "msg.value().id: " << (int)msg.second.id << std::endl;
+      std::cout << "msg.value().cmd_id: " << (int)msg.second.cmd_id << std::endl;
+      std::cout << "msg.value().param_1: " << (int)msg.second.param_1 << std::endl;
+      std::cout << " msg.value().param_2: " <<  (int)msg.second.param_2 << std::endl;
     }
 
     // std::cout << (int)data << std::endl;
