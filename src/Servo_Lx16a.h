@@ -148,14 +148,14 @@ public:
     auto tmp_speed = constrain(speed, -1.0, 1.0);
     // std::cout << "tmp_speed: " << tmp_speed << std::endl;
     //stop if speed near 0
-    if(std::abs(tmp_speed) < 0.00001)
+    if(std::abs(tmp_speed) > 0.00001)
     {
       //stop
-      _send_serial_cb(SerialCommand_Lx16a::create_stop_cmd(_param.id));
-      _curr_speed_pos = this->rad_to_servoangle(_status.pos);
+      //_send_serial_cb(SerialCommand_Lx16a::create_stop_cmd(_param.id));
+      //_curr_speed_pos = this->rad_to_servoangle(_status.pos);
+      _curr_speed_pos += std::round(static_cast<double>(SERVO_MAX_SPEED) * tmp_speed) ;
     }
 
-    _curr_speed_pos += std::round(static_cast<double>(SERVO_MAX_SPEED) * tmp_speed) ;
 
     _curr_speed_pos = constrain(_curr_speed_pos, 0, 1000);
     // std::cout << "_curr_speed_pos: " << _curr_speed_pos << std::endl;
