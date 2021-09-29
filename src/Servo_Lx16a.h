@@ -159,7 +159,11 @@ public:
 
     _curr_speed_pos = constrain(_curr_speed_pos, 0, 1000);
     // std::cout << "_curr_speed_pos: " << _curr_speed_pos << std::endl;
-    _send_serial_cb(SerialCommand_Lx16a::create_set_pos_cmd(_param.id, _curr_speed_pos));
+    if(_got_pos)
+    {
+      _send_serial_cb(SerialCommand_Lx16a::create_set_pos_cmd(_param.id, _curr_speed_pos));
+    }
+  
     // //set min/max angle with given speed (converted to write time)
     // //only for testing ... not wroking for end approach  todo compare with current angle
     // uint16_t time = (1.0 - (1+std::abs(tmp_speed)) * 0.5) * SERVO_MAX_TIME;
@@ -233,6 +237,11 @@ public:
       break;
     case LOBOT_SERVO_POS_READ.first:
       _status.pos = this->servoangle_to_rad(serial_ret.param_1);
+      if(!_got_pos)
+      {
+        _curr_speed_pos = this->rad_to_servoangle(_status.pos);
+        _got_pos = true;
+      }
       // std::cout << "serial_ret.param_1: " << serial_ret.param_1 << std::endl;
       break;
     case LOBOT_SERVO_OR_MOTOR_MODE_READ.first: //for speed
@@ -338,6 +347,8 @@ private: //data
   //desired value
   double _desired_pos;
   int16_t  _desired_speed;
+
+  bool _got_pos = false;
 };
 
 } //ns 
