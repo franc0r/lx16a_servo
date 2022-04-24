@@ -72,13 +72,13 @@ struct Params_Lx16a{
  * 
  */
 struct Status_Lx16a{
-  francor::base::NormalizedAngleExtended pos;
+  francor::base::AnglePiToPi pos;
   double  speed = 0;
   uint8_t  temp = 0;
   double v_in = 0;
   uint8_t  error_state = 0;
   Status_Lx16a() = default;
-  Status_Lx16a(const francor::base::NormalizedAngleExtended& pos_,
+  Status_Lx16a(const francor::base::AnglePiToPi& pos_,
                const double  speed_,
                const uint8_t  temp_,
                const double v_in_,
@@ -114,7 +114,7 @@ public:
     this->set_min_max_angle(_param.min_angle_rad, _param.max_angle_rad);
   }
 
-  void set_pos(const francor::base::NormalizedAngleExtended& angle)
+  void set_pos(const francor::base::AnglePiToPi& angle)
   {
     // std::cout << "ID: " << (int)_param.id << "got angle: " << angle.radian() << std::endl;
     auto pos = this->rad_to_servoangle(angle.radian());
@@ -276,12 +276,12 @@ private:
     
   }
 
-  void set_min_max_angle(const francor::base::NormalizedAngleExtended& min_angle, const francor::base::NormalizedAngleExtended& max_angle)
+  void set_min_max_angle(const francor::base::AnglePiToPi& min_angle, const francor::base::AnglePiToPi& max_angle)
   {
     const uint16_t min_ang = this->rad_to_servoangle(min_angle.radian());
-    // std::cout << "min_ang: " << min_ang << std::endl;
+    std::cout << "min_ang: " << min_ang << std::endl;
     const uint16_t max_ang = this->rad_to_servoangle(max_angle.radian());
-    // std::cout << "max_ang: " << max_ang << std::endl;
+    std::cout << "max_ang: " << max_ang << std::endl;
 
     auto data = SerialCommand_Lx16a::create_set_angle_limit_cmd(_param.id, min_ang, max_ang);
 
@@ -296,7 +296,7 @@ private:
    * @param rad 
    * @return int16_t 
    */
-  uint16_t rad_to_servoangle(const francor::base::NormalizedAngleExtended& angle)
+  uint16_t rad_to_servoangle(const francor::base::AnglePiToPi& angle)
   {
     double rad = constrain(angle.radian(), SERVO_RAD_MIN, SERVO_RAD_MAX);
     // std::cout << "rad: " << rad << std::endl;
@@ -305,7 +305,7 @@ private:
     return tmp;
   }
 
-  francor::base::NormalizedAngleExtended servoangle_to_rad(const int16_t servoangle)
+  francor::base::AnglePiToPi servoangle_to_rad(const int16_t servoangle)
   {
     int16_t pos = constrain(servoangle, SERVO_POS_MIN, SERVO_POS_MAX);
 

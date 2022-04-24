@@ -68,39 +68,40 @@ int main(int argc, char const *argv[])
 
   std::thread thrd(read_thrd);
 
-  // int dings = 1;
+  int dings = 1;
 
-  // int pos = 0;
+  int pos = 0;
+  com.transmit(francor::servo::SerialCommand_Lx16a::create_set_angle_limit_cmd(2, 0, 1000));
   while(1)
   {
-    auto data = francor::servo::SerialCommand_Lx16a::create_set_pos_cmd(2, 200, 1);
-    std::cout << "size: " << data.size() << std::endl;
-    // for(auto& e : data)
-    // {
-    //   std::cout << (int)e << std::endl;
-    // }
-    // std::cout << "" << std::endl;
-    com.transmit(data);
-    com.transmit(francor::servo::SerialCommand_Lx16a::create_get_angle_limit_cmd(2));
+    // auto data = francor::servo::SerialCommand_Lx16a::create_set_pos_cmd(2, 100, 1);
+    // std::cout << "size: " << data.size() << std::endl;
+    // // for(auto& e : data)
+    // // {
+    // //   std::cout << (int)e << std::endl;
+    // // }
+    // // std::cout << "" << std::endl;
+    // com.transmit(data);
+    // // com.transmit(francor::servo::SerialCommand_Lx16a::create_get_angle_limit_cmd(2));
+    // // // com.transmit(francor::servo::SerialCommand_Lx16a::create_get_pos_cmd(2));
+    // // std::cout << "press enter" << std::endl;
+    // getchar();
+    // com.transmit(francor::servo::SerialCommand_Lx16a::create_set_pos_cmd(2, 1000, 1));
     // com.transmit(francor::servo::SerialCommand_Lx16a::create_get_pos_cmd(2));
-    std::cout << "press enter" << std::endl;
-    getchar();
-    com.transmit(francor::servo::SerialCommand_Lx16a::create_set_pos_cmd(2, 800, 5000));
-    com.transmit(francor::servo::SerialCommand_Lx16a::create_get_pos_cmd(2));
-    std::cout << "press enter" << std::endl;
-    getchar();
+    // std::cout << "press enter" << std::endl;
+    // getchar();
     // std::cout << "press enter" << std::endl;
     // getchar();
 
 
     
-    // com.transmit(francor::SerialCommand_Lx16a::create_set_pos_cmd(2, pos));
-    // usleep(5000);
-    // pos += dings;
-    // if(pos >= 1000)
-    //   dings =  -2;
-    // else if(pos <= 0)
-    //   dings = 2;
+    com.transmit(francor::servo::SerialCommand_Lx16a::create_set_pos_cmd(2, pos));
+    usleep(5000);
+    pos += dings;
+    if(pos >= 1000)
+      dings =  -2;
+    else if(pos <= 0)
+      dings = 2;
   }
 
 

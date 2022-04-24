@@ -416,11 +416,11 @@ private: //dataelements
 
   // std::function<void(const Params_Lx16a&, const Status_Lx16a&)> _update_callback;
 
-  Duration _d_pos_request   = Duration(1/20);//= 20.0;
-  Duration _d_speed_request  = Duration(1/20);//= 20.0;
+  Duration _d_pos_request   = Duration(1/20.0);//= 20.0;
+  Duration _d_speed_request  = Duration(1/20.0);//= 20.0;
   Duration _d_error_request  = Duration(1/0.5);//= 0.5;
   Duration _d_temp_request   = Duration(1/0.5);//= 0.5;
-  Duration _d_vin_request    = Duration(1/1);//= 1.0;
+  Duration _d_vin_request    = Duration(1/1.0);//= 1.0;
 
   Time _t_pos_req;
   Time _t_speed_req;
